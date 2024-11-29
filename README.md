@@ -1,1 +1,1 @@
-# CCIRecommender
+# CCIStockFrontend
