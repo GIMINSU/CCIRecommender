@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+    
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='data-analytics.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>매매 이력</title>
+</head>
+
+</head>
+<body class="trade-history-page">
+    <!-- 상단 버튼 -->
+    <div class="top-buttons">
+        <!-- 메인으로 돌아가기 버튼 -->
+        <a href="{{ url_for('index') }}" class="main-button">
+            <img src="{{ url_for('static', filename='giminsu_logo_250.png') }}" alt="메인으로">
+        </a>
+
+        <a href="javascript:history.back()" class="back-button">이전 페이지로 돌아가기</a>
+    </div>
+
+    <h1>{{ stock_name }} ({{ symbol }}) 매매 이력</h1>
+
+    <form method="get" action="{{ url_for('trade_history', symbol=symbol) }}" class="pagination">
+        <input type="hidden" name="page" value="1">
+    </form>
+
+    <!-- 클릭된 row 내용 표 -->
+    <h3 style="text-align: left;">
+        {% if investment_target == 'win_rate' %}
+            최대 승률 기준 최적 매매 전략
+        {% elif investment_target == 'revenue_rate' %}
+            최대 수익률 기준 최적 매매 전략
+        {% elif investment_target == 'revenue_per_investment_day' %}
+            최대 투자일당 수익 기준 최적 매매 전략
+        {% else %}
+            {{ investment_target }} 기준 최적 매매조건
+        {% endif %}
+    </h3>
+    <table border="1" class="selected-row-table" style="border-collapse: collapse; width: auto;">
+        <thead>
+            <tr>
+                <th>종목명</th>
+                <th>종목코드</th>
+                <th>목표 투자기간</th>
+                <th>목표 수익률</th>
+                <th>구매 기준 CCI</th>
+                <th>손절 기준 CCI</th>
+                <th>승률</th>
+                <th>수익률</th>
+                <th>익절 횟수</th>
+                <th>실제 투자일당 수익(원)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ stock_name }}</td>
+                <td>{{ symbol }}</td>
+                <td>{{ condition_holding_days | int }}</td>
+                <td>{{ condition_target_return | int }}</td>
+                <td>{{ condition_buy_cci_threshold | int }}</td>
+                <td>{{ condition_stop_loss_cci_threshold | int }}</td>
+                <td>{{ "{:.2f}".format(win_rate) }}%</td>
+                <td>{{ "{:.2f}".format(revenue_rate) }}%</td>
+                <td>{{ count_win | int }}</td>
+                <td>{{ avg_revenue_per_days_held | int | format_thousands }}</td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+    <h3>매매 이력 그래프</h3>
+    <div id='chart' class='chart' style="margin-bottom: 100px;"></div>
+    <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+    <script type='text/javascript'>
+        var graphs = {{ graphJSON | safe }};
+        Plotly.newPlot('chart', graphs.data, graphs.layout);
+    </script>
+
+
+    <!-- 테이블 -->
+    <h3>매매 이력 테이블</h3>
+
+    <div class="download-section">
+        <a href="{{ url_for('download_trade_history', 
+                             symbol=symbol, 
+                             condition_holding_days=condition_holding_days, 
+                             condition_target_return=condition_target_return, 
+                             condition_buy_cci_threshold=condition_buy_cci_threshold, 
+                             condition_stop_loss_cci_threshold=condition_stop_loss_cci_threshold) }}" 
+           class="download-button">
+            매매 이력 다운로드 (CSV)
+        </a>
+    </div>
+
+    <div class="table-container">
+        <table border="1" class="trade-history-table">
+            <thead>
+                <tr>
+                    {% for col in columns %}
+                    <th >{{ col }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                    {% for item, col in zip(row, columns) %}
+                    <td>
+                        {% if col in ["승률", "수익률"] %}
+                            {{ "{:.2f}".format(item) }}%
+                        {% elif item is number %}
+                            {{ "{:,.0f}".format(item) }}
+                        {% else %}
+                            {{ item }}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 페이지네이션 -->
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('trade_history', 
+                            symbol=symbol, 
+                            page=page-1, 
+                            condition_holding_days=request.args.get('condition_holding_days'), 
+                            condition_target_return=request.args.get('condition_target_return'), 
+                            condition_buy_cci_threshold=request.args.get('condition_buy_cci_threshold'), 
+                            condition_stop_loss_cci_threshold=request.args.get('condition_stop_loss_cci_threshold'), 
+                            stock_name=request.args.get('stock_name'),
+                            win_rate=request.args.get('win_rate'),
+                            revenue_rate=request.args.get('revenue_rate'),
+                            count_win=request.args.get('count_win'),
+                            investment_target=request.args.get('investment_target'),
+                            avg_revenue_per_days_held=request.args.get('avg_revenue_per_days_held')) }}">
+            이전
+        </a>
+        {% endif %}
+        <span>Page {{ page }}</span>
+        {% if has_next %}
+        <a href="{{ url_for('trade_history', 
+                            symbol=symbol, 
+                            page=page+1, 
+                            condition_holding_days=request.args.get('condition_holding_days'), 
+                            condition_target_return=request.args.get('condition_target_return'), 
+                            condition_buy_cci_threshold=request.args.get('condition_buy_cci_threshold'), 
+                            condition_stop_loss_cci_threshold=request.args.get('condition_stop_loss_cci_threshold'), 
+                            stock_name=request.args.get('stock_name'),
+                            win_rate=request.args.get('win_rate'),
+                            revenue_rate=request.args.get('revenue_rate'),
+                            count_win=request.args.get('count_win'),
+                            investment_target=request.args.get('investment_target'),
+                            avg_revenue_per_days_held=request.args.get('avg_revenue_per_days_held')) }}">
+            다음
+        </a>
+
+        {% endif %}
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='data-analytics.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <title>추천 결과</title>
+</head>
+<body class="recommend-page">
+    <!-- 상단 버튼 -->
+    <div class="top-buttons">
+        <!-- 메인으로 돌아가기 버튼 -->
+        <a href="{{ url_for('index') }}" class="main-button">
+            <img src="{{ url_for('static', filename='giminsu_logo_250.png') }}" alt="메인으로">
+        </a>
+    </div>
+
+    <h1>추천 결과</h1>
+
+    <h3 style="text-align: left;">
+        {% if investment_target == 'win_rate' %}
+            주식별 승률 기준 최적 매매조건
+        {% elif investment_target == 'revenue_rate' %}
+            주식별 수익률 기준 최적 매매조건
+        {% elif investment_target == 'revenue_per_investment_day' %}
+            주식별 투자일별 수익 기준 최적 매매조건
+        {% else %}
+            {{ investment_target }} 기준 최적 매매조건
+        {% endif %}
+    </h3>
+
+    <!-- 필터 옵션 -->
+    <form method="get" action="{{ url_for('recommend') }}" class="filter-form">
+        <input type="hidden" name="investment_type" value="{{ investment_type }}">
+        <input type="hidden" name="investment_target" value="{{ investment_target }}">
+        <input type="hidden" name="stock_name" value="{{ stock_name }}">
+        <input type="hidden" name="page" value="1">
+        <h3 class="filter-title">특정 종목 확인하기</h3>
+        <!-- Symbol 필터 -->
+        <div class="symbol-filter">
+            <label for="symbol">종목코드:</label>
+            <input type="text" id="symbol" name="symbol" value="{{ symbol|default('') }}" placeholder="종목코드 입력">
+        </div><br>
+        <h3 class="filter-title">목표 수익률 또는 목표 투자기간별 추천 결과 확인</h3>
+        <div class="filter-selectors">
+            <div class="selector">
+                <label for="condition_target_return">목표 수익률</label>
+                <select name="condition_target_return" id="condition_target_return">
+                    <option value="all" {% if condition_target_return == 'all' %}selected{% endif %}>전체</option>
+                    {% for i in range(1, 11) %}
+                    <option value="{{ i }}" {% if condition_target_return == i|string %}selected{% endif %}>
+                        {{ i }}%
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="selector">
+                <label for="condition_holding_days">목표 투자기간</label>
+                <select name="condition_holding_days" id="condition_holding_days">
+                    <option value="all" {% if condition_holding_days == 'all' %}selected{% endif %}>전체</option>
+                    {% for i in [10, 20, 30, 40, 50, 60] %}
+                    <option value="{{ i }}" {% if condition_holding_days == i|string %}selected{% endif %}>
+                        {{ i }}일
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- 필터 버튼 그룹 -->
+        <div class="button-group">
+            <button type="submit" class="apply-button">필터 적용</button>
+            <button type="submit" class="reset-button" formaction="{{ url_for('recommend', investment_type=investment_type, investment_target=investment_target, page=1) }}">필터 리셋</button>
+        </div>
+    </form><br>
+
+    <!-- 테이블 -->
+    <h4>표의 행을 클릭하면 해당 종목의 상세 정보를 확인할 수 있습니다.</h4>
+    <table border="1" id="recommendation-table">
+        <thead>
+            <tr>
+                {% for col in columns %}
+                <th class="{% if sort_column == col %}active{% endif %}">
+                    <a href="{{ url_for('recommend',
+                                        investment_type=investment_type,
+                                        investment_target=investment_target,
+                                        page=1,
+                                        condition_holding_days=condition_holding_days,
+                                        condition_target_return=condition_target_return,
+                                        symbol=symbol,
+                                        sort_column=col,
+                                        sort_order='desc' if sort_column == col and sort_order == 'asc' else 'asc') }}">
+                        {{ col }}
+                        {% if sort_column == col %}
+                        <span>{{ '↑' if sort_order == 'asc' else '↓' }}</span>
+                        {% endif %}
+                    </a>
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr class="clickable-row" 
+                onclick="window.location.href='/trade_history/{{ row[0] }}?condition_holding_days={{ row[3] }}&condition_target_return={{ row[2]}}&condition_buy_cci_threshold={{ row[4] }}&condition_stop_loss_cci_threshold={{ row[5]}}&stock_name={{ row[1] }}&win_rate={{ row[6] }}&revenue_rate={{ row[8] }}&count_win={{ row[7] }}&investment_target={{ investment_target }}&avg_revenue_per_days_held={{ row[9] }}&page=1'">
+
+            
+                {% for item, col in zip(row, columns) %}
+                <td class="{% if col in ['승률', '수익률', '익절 횟수', '실제 투자일당 수익(원)'] %}numeric{% endif %}">
+                    {% if col in ['승률', '수익률'] %}
+                        {{ "{:.2f}".format(item) }}%
+                    {% elif item is number %}
+                        {{ "{:,.0f}".format(item) }}
+                    {% else %}
+                        {{ item }}
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table><br><br>
+    
+
+    <!-- 페이지네이션 -->
+    <div>
+        {% if page > 1 %}
+        <a href="{{ url_for('recommend', 
+                            investment_type=investment_type, 
+                            investment_target=investment_target, 
+                            page=page-1, 
+                            condition_holding_days=condition_holding_days, 
+                            condition_target_return=condition_target_return, 
+                            symbol=symbol,
+                            sort_column=sort_column,
+                            sort_order=sort_order,
+                            stock_name=stock_name,) }}">
+            이전
+        </a>
+        {% endif %}
+        <span>Page {{ page }}</span>
+        {% if has_next %}
+        <a href="{{ url_for('recommend', 
+                            investment_type=investment_type, 
+                            investment_target=investment_target, 
+                            page=page+1, 
+                            condition_holding_days=condition_holding_days, 
+                            condition_target_return=condition_target_return, 
+                            symbol=symbol,
+                            sort_column=sort_column,
+                            sort_order=sort_order,
+                            stock_name=stock_name,) }}">
+            다음
+        </a>
+        {% endif %}
+    </div>
+    
+</body>
+</html>

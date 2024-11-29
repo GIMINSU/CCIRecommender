@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='data-analytics.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>CCI 기반 주식 추천</title>
+</head>
+
+<body class="index-page">
+    <!-- 상단 버튼 -->
+    <div class="top-buttons">
+        <a href="{{ url_for('index') }}" class="main-button">
+            <img src="{{ url_for('static', filename='giminsu_logo_250.png') }}" alt="메인으로">
+        </a>
+    </div>
+
+    <div class="form-container">
+        <h1>추천 조건을 선택하세요</h1>
+        <form action="{{ url_for('recommend') }}" method="get">
+            <!-- 첫 번째 선택: 투자 상품 -->
+            <h2>1. 투자 상품을 선택하세요</h2>
+            <div class="radio-group-horizontal">
+                <label>
+                    <input type="radio" name="investment_type" value="stock" checked> Stock
+                </label>
+                <label>
+                    <input type="radio" name="investment_type" value="etf"> ETF
+                </label>
+            </div><br>
+
+            <!-- 두 번째 선택: 투자 목표 -->
+            <h2>2. 투자 목표를 선택하세요</h2>
+            <p>
+                투자 목표는 투자자의 심리적 성향과 전략에 따라 달라질 수 있습니다.<br>
+                각 항목에 대한 설명을 참고하여 본인의 투자 스타일에 맞는 목표를 선택하세요.
+            </p><br><br>
+          
+            <div class="radio-group">
+                <div class="radio-item">
+                    <label class="radio-label">
+                        <input type="radio" name="investment_target" value="win_rate" checked> 승률(수익 발생 확률)
+                    </label>
+                    <p class="description">
+                      안정적이고 예측 가능한 결과를 선호하는 투자자에게 적합합니다.<br>
+                      수익 발생 가능성이 높은 종목을 중심으로 전략을 설계하세요.
+                    </p>
+                </div>
+                <div class="radio-item">
+                    <label class="radio-label">
+                        <input type="radio" name="investment_target" value="revenue_rate"> 수익률
+                    </label>
+                    <p class="description">
+                      높은 수익을 목표로 하며, 더 큰 리스크를 감수할 준비가 된 투자자에게 적합합니다.<br>
+                      큰 수익을 추구하는 장기적 관점의 전략을 선택하세요.
+                    </p>
+                </div>
+                <div class="radio-item">
+                    <label class="radio-label">
+                        <input type="radio" name="investment_target" value="revenue_per_investment_day"> 실제 투자일당 수익
+                    </label>
+                    <p class="description">
+                      효율성을 중시하며 자금을 빠르게 회전시켜 수익을 내고자 하는 경우 적합합니다.<br>
+                      짧은 투자 기간에 최대 성과를 기대하는 전략입니다.
+                    </p>
+                </div>
+            </div><br><br>
+
+
+            <button type="submit">추천 보기</button>
+        </form>
+    </div>
+</body>
+
+</html>

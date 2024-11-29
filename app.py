@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, make_response
 import io
 from matplotlib import font_manager, rc
 
-from scripts.config import LocalFilePathConfig as lfpc, DefaultValueConfig as dvc
+from config import LocalFilePathConfig as lfpc, DefaultValueConfig as dvc
 
 from scripts.web_utils import generate_stock_data, plot_signal_with_cci
 
