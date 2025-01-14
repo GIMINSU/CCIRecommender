@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
+<head class="index">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="{{ url_for('static', filename='data-analytics.png') }}">
@@ -8,15 +8,20 @@
     
     <title>추천 결과</title>
 </head>
-<body class="recommend-page">
+
+<div class="header">
     <!-- 상단 버튼 -->
-    <div class="top-buttons">
-        <!-- 메인으로 돌아가기 버튼 -->
+    <h1>데이터와 AI로 무장한 투자 비서, 지금 시작하세요</h1>
+    <div class="index main-button">
         <a href="{{ url_for('index') }}" class="main-button">
             <img src="{{ url_for('static', filename='giminsu_logo_250.png') }}" alt="메인으로">
         </a>
+        <a href="javascript:history.back()" class="back-button">이전 페이지로 돌아가기</a> 
     </div>
+</div>
 
+<body>
+    <div class="form-container">
     <h1>추천 결과</h1>
 
     <h3 style="text-align: left;">
@@ -35,14 +40,21 @@
     <form method="get" action="{{ url_for('recommend') }}" class="filter-form">
         <input type="hidden" name="investment_type" value="{{ investment_type }}">
         <input type="hidden" name="investment_target" value="{{ investment_target }}">
-        <input type="hidden" name="stock_name" value="{{ stock_name }}">
         <input type="hidden" name="page" value="1">
+
         <h3 class="filter-title">특정 종목 확인하기</h3>
         <!-- Symbol 필터 -->
         <div class="symbol-filter">
             <label for="symbol">종목코드:</label>
             <input type="text" id="symbol" name="symbol" value="{{ symbol|default('') }}" placeholder="종목코드 입력">
-        </div><br>
+        </div>
+        
+        <!-- 종목명 필터 -->
+        <!-- <div class="name-filter">
+            <label for="stock_name">종목명:</label>
+            <input type="text" id="stock_name" name="stock_name" value="{{ stock_name|default('') }}" placeholder="종목명 입력">
+        </div><br> -->
+
         <h3 class="filter-title">목표 수익률 또는 목표 투자기간별 추천 결과 확인</h3>
         <div class="filter-selectors">
             <div class="selector">
@@ -76,8 +88,18 @@
         </div>
     </form><br>
 
+    <p>
+        이 페이지는 한국거래소(KRX)에 상장된 <strong>주식</strong>과 <strong>ETF</strong> 중 
+        <strong>시가총액 상위 300개</strong>를 분석하여 결과를 제공합니다.
+    </p>
+    <p>
+        <strong>승률</strong>은 매매조건에 따라 수익을 얻을 수 있는 확률을 의미하며, 
+        <strong>수익률</strong>은 매매조건에 따라 얻을 수 있는 수익률을 의미합니다.
+    </p>
+    <p>표의 행을 클릭하면 해당 종목의 상세 정보를 확인할 수 있습니다.</p>
+    <p>표의 열을 클릭하면 해당 열을 기준으로 정렬됩니다.</p>
+
     <!-- 테이블 -->
-    <h4>표의 행을 클릭하면 해당 종목의 상세 정보를 확인할 수 있습니다.</h4>
     <table border="1" id="recommendation-table">
         <thead>
             <tr>
@@ -90,6 +112,7 @@
                                         condition_holding_days=condition_holding_days,
                                         condition_target_return=condition_target_return,
                                         symbol=symbol,
+                                        stock_name=stock_name,
                                         sort_column=col,
                                         sort_order='desc' if sort_column == col and sort_order == 'asc' else 'asc') }}">
                         {{ col }}
@@ -106,7 +129,6 @@
             <tr class="clickable-row" 
                 onclick="window.location.href='/trade_history/{{ row[0] }}?condition_holding_days={{ row[3] }}&condition_target_return={{ row[2]}}&condition_buy_cci_threshold={{ row[4] }}&condition_stop_loss_cci_threshold={{ row[5]}}&stock_name={{ row[1] }}&win_rate={{ row[6] }}&revenue_rate={{ row[8] }}&count_win={{ row[7] }}&investment_target={{ investment_target }}&avg_revenue_per_days_held={{ row[9] }}&page=1'">
 
-            
                 {% for item, col in zip(row, columns) %}
                 <td class="{% if col in ['승률', '수익률', '익절 횟수', '실제 투자일당 수익(원)'] %}numeric{% endif %}">
                     {% if col in ['승률', '수익률'] %}
@@ -122,10 +144,9 @@
             {% endfor %}
         </tbody>
     </table><br><br>
-    
 
     <!-- 페이지네이션 -->
-    <div>
+    <div class="pagination">
         {% if page > 1 %}
         <a href="{{ url_for('recommend', 
                             investment_type=investment_type, 
@@ -134,13 +155,29 @@
                             condition_holding_days=condition_holding_days, 
                             condition_target_return=condition_target_return, 
                             symbol=symbol,
+                            stock_name=stock_name,
                             sort_column=sort_column,
-                            sort_order=sort_order,
-                            stock_name=stock_name,) }}">
+                            sort_order=sort_order) }}">
             이전
         </a>
         {% endif %}
-        <span>Page {{ page }}</span>
+
+        {% for p in page_numbers %}
+        <a href="{{ url_for('recommend', 
+                            investment_type=investment_type, 
+                            investment_target=investment_target, 
+                            page=p, 
+                            condition_holding_days=condition_holding_days, 
+                            condition_target_return=condition_target_return, 
+                            symbol=symbol,
+                            stock_name=stock_name,
+                            sort_column=sort_column,
+                            sort_order=sort_order) }}" 
+           class="page-number {% if p == page %}active{% endif %}">
+            {{ p }}
+        </a>
+        {% endfor %}
+
         {% if has_next %}
         <a href="{{ url_for('recommend', 
                             investment_type=investment_type, 
@@ -149,13 +186,13 @@
                             condition_holding_days=condition_holding_days, 
                             condition_target_return=condition_target_return, 
                             symbol=symbol,
+                            stock_name=stock_name,
                             sort_column=sort_column,
-                            sort_order=sort_order,
-                            stock_name=stock_name,) }}">
+                            sort_order=sort_order) }}">
             다음
         </a>
         {% endif %}
     </div>
-    
+    </div>
 </body>
 </html>

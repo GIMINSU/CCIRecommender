@@ -41,6 +41,7 @@ def index():
     return render_template('index.html')
 
 
+# recommend 함수의 수정
 @app.route('/recommend', methods=['POST', 'GET'])
 def recommend():
     try:
@@ -48,6 +49,7 @@ def recommend():
         investment_type = request.args.get('investment_type')
         investment_target = request.args.get('investment_target')
         symbol = request.args.get('symbol', '').strip()
+        stock_name = request.args.get('stock_name', '').strip()
         holding_days = request.args.get('condition_holding_days', 'all')
         target_return = request.args.get('condition_target_return', 'all')
         sort_column = request.args.get('sort_column', None)
@@ -64,6 +66,8 @@ def recommend():
         # 필터링
         if symbol:
             result_df = result_df[result_df['symbol'].str.contains(symbol, case=False, na=False)]
+        # if stock_name:
+        #     result_df = result_df[result_df['name'].str.contains(stock_name, case=False, na=False)]
         if holding_days != 'all':
             result_df = result_df[result_df['condition_holding_days'] == int(float(holding_days))]
         if target_return != 'all':
@@ -83,7 +87,6 @@ def recommend():
             'win_rate': '승률',
             'count_win': '익절 횟수',
             'revenue_rate': '수익률',
-
             'avg_revenue_per_days_held': '실제 투자일당 수익(원)',
         }
         result_df = result_df.rename(columns=column_map)
@@ -105,6 +108,14 @@ def recommend():
         paginated_df = result_df.iloc[start_idx:end_idx]
         has_next = end_idx < total
 
+        # 총 페이지 계산
+        total_pages = (total + per_page - 1) // per_page
+
+        # 페이지네이션 범위 계산 (최대 10개 표시)
+        start_page = max(1, page - 5)
+        end_page = min(total_pages, start_page + 9)
+        page_numbers = list(range(start_page, end_page + 1))
+
         return render_template(
             'recommend.html',
             data=paginated_df.values,
@@ -116,14 +127,17 @@ def recommend():
             investment_type=investment_type,
             investment_target=investment_target,
             symbol=symbol,
+            stock_name=stock_name,
             sort_column=sort_column,
             sort_order=sort_order, 
-            stock_name=stock_name
+            total_pages=total_pages,
+            page_numbers=page_numbers,
         )
 
     except Exception as e:
-        traceback.print_exc
+        traceback.print_exc()
         return str(e), 500
+
 
 
 
@@ -149,7 +163,7 @@ def trade_history(symbol):
         
 
         # 그래프 및 데이터 처리
-        graphJSON, target_df, graph_df = plot_signal_with_cci(
+        graphJSON, df_target, df_graph = plot_signal_with_cci(
             symbol=symbol,
             condition_holding_days=condition_holding_days,
             condition_target_return=condition_target_return,
@@ -157,19 +171,32 @@ def trade_history(symbol):
             condition_stop_loss_cci_threshold=condition_stop_loss_cci_threshold
         )
 
-        if target_df.empty:
+        df_table = df_graph[~df_graph['signal'].isna()].reset_index(drop=True)
+        df_table = df_table.fillna('-')
+        df_table = df_table[['date', 'signal', 'buy_price', 'reach_target_price', 'stop_loss_price', 'maturity_price', 'reach_target_date', 'stop_loss_date', 'maturity_date','Open', 'High', 'Low', 'Close', 'Volume', 'open_cci', 'close_cci']]
+        df_table = df_table.sort_values(by='date', ascending=False)
+
+        if df_target.empty:
             return f"{symbol} ({stock_name})에 대해 필터링 조건에 맞는 데이터가 없습니다.", 404
 
         # 페이지네이션
-        columns = list(graph_df.columns)
-        page = int(float(request.args.get('page', 1)))
+        columns = list(df_table.columns)
+        page = int(request.args.get('page', 1))
         per_page = 10
-        total = len(graph_df)
+        total = len(df_table)
         start_idx = (page - 1) * per_page
         end_idx = start_idx + per_page
 
-        paginated_df = graph_df.iloc[start_idx:end_idx]
+        paginated_df = df_table.iloc[start_idx:end_idx]
         has_next = end_idx < total
+
+        # 총 페이지 계산
+        total_pages = (total + per_page - 1) // per_page
+
+        # 페이지네이션 범위 계산 (최대 10개 표시)
+        start_page = max(1, page - 5)
+        end_page = min(total_pages, start_page + 9)
+        page_numbers = list(range(start_page, end_page + 1))
 
 
         return render_template(
@@ -196,9 +223,6 @@ def trade_history(symbol):
         traceback.print_exc
         return str(e), 500
 
-
-
-
 @app.template_filter('format_thousands')
 def format_thousands(value):
     if isinstance(value, (int, float)):
@@ -209,7 +233,7 @@ def format_thousands(value):
 def download_trade_history(symbol):
     try:
         # 그래프 및 데이터 처리
-        _, _, graph_df = plot_signal_with_cci(
+        _, _, df_graph = plot_signal_with_cci(
             symbol=symbol,
             condition_holding_days=int(float(request.args.get('condition_holding_days', 10))),
             condition_target_return=int(float(request.args.get('condition_target_return', 5))),
@@ -217,12 +241,12 @@ def download_trade_history(symbol):
             condition_stop_loss_cci_threshold=int(float(request.args.get('condition_stop_loss_cci_threshold', 0))),
         )
 
-        if graph_df.empty:
+        if df_graph.empty:
             return "No trade history data available.", 404
 
         # 데이터프레임을 CSV로 변환
         output = io.StringIO()
-        graph_df.to_csv(output, index=False, encoding='utf-8-sig')
+        df_graph.to_csv(output, index=False, encoding='utf-8-sig')
         output.seek(0)
 
         # CSV 파일로 응답 반환
@@ -237,4 +261,4 @@ def download_trade_history(symbol):
 
 if __name__ == '__main__':
     print('Start! Auto Trade Flask Server!')
-    app.run(host='0.0.0.0', port=5000, use_reloader=False, threaded=True, debug=False)
+    app.run(host='0.0.0.0', port=5000, use_reloader=True, threaded=True, debug=True)

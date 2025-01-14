@@ -9,18 +9,19 @@
     <title>매매 이력</title>
 </head>
 
-</head>
-<body class="trade-history-page">
+<div class="header">
     <!-- 상단 버튼 -->
-    <div class="top-buttons">
-        <!-- 메인으로 돌아가기 버튼 -->
+    <h1>데이터와 AI로 무장한 투자 비서, 지금 시작하세요</h1>
+    <div class="index main-button">
         <a href="{{ url_for('index') }}" class="main-button">
             <img src="{{ url_for('static', filename='giminsu_logo_250.png') }}" alt="메인으로">
-        </a>
-
+        </a> 
         <a href="javascript:history.back()" class="back-button">이전 페이지로 돌아가기</a>
     </div>
+</div>
 
+<body class="trade-history-page">
+    <div class="form-container">
     <h1>{{ stock_name }} ({{ symbol }}) 매매 이력</h1>
 
     <form method="get" action="{{ url_for('trade_history', symbol=symbol) }}" class="pagination">
@@ -39,7 +40,7 @@
             {{ investment_target }} 기준 최적 매매조건
         {% endif %}
     </h3>
-    <table border="1" class="selected-row-table" style="border-collapse: collapse; width: auto;">
+    <table class="selected-row-table">
         <thead>
             <tr>
                 <th>종목명</th>
@@ -142,7 +143,26 @@
             이전
         </a>
         {% endif %}
-        <span>Page {{ page }}</span>
+
+        {% for p in page_numbers %}
+        <a href="{{ url_for('trade_history', 
+                            symbol=symbol, 
+                            page=p, 
+                            condition_holding_days=request.args.get('condition_holding_days'), 
+                            condition_target_return=request.args.get('condition_target_return'), 
+                            condition_buy_cci_threshold=request.args.get('condition_buy_cci_threshold'), 
+                            condition_stop_loss_cci_threshold=request.args.get('condition_stop_loss_cci_threshold'), 
+                            stock_name=request.args.get('stock_name'),
+                            win_rate=request.args.get('win_rate'),
+                            revenue_rate=request.args.get('revenue_rate'),
+                            count_win=request.args.get('count_win'),
+                            investment_target=request.args.get('investment_target'),
+                            avg_revenue_per_days_held=request.args.get('avg_revenue_per_days_held')) }}" 
+                            class="page-number {% if p == page %}active{% endif %}">
+                            <span>Page {{ p }}</span>
+        </a>
+        {% endfor %}
+
         {% if has_next %}
         <a href="{{ url_for('trade_history', 
                             symbol=symbol, 
@@ -162,6 +182,6 @@
 
         {% endif %}
     </div>
-
+    </div>
 </body>
 </html>

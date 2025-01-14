@@ -16,8 +16,11 @@ RUN pip install -r requirements.txt
 # 애플리케이션 코드 복사
 COPY . .
 
+EXPOSE 5000
+
 # Flask 애플리케이션 실행
-CMD ["python", "app.py"]
+# CMD ["python", "app.py"]
+CMD ["waitress-serve", "--listen=192.168.0.23:5000", "app:app"]
 
 # 타임존 설정
 ENV TZ=Asia/Seoul
