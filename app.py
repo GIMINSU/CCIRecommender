@@ -220,7 +220,7 @@ def trade_history(symbol):
         )
 
     except Exception as e:
-        traceback.print_exc
+        traceback.print_exc()
         return str(e), 500
 
 @app.template_filter('format_thousands')
@@ -256,7 +256,7 @@ def download_trade_history(symbol):
         return response
 
     except Exception as e:
-        traceback.print_exc
+        traceback.print_exc()
         return str(e), 500
 
 if __name__ == '__main__':
