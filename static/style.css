@@ -24,59 +24,101 @@ body {
     transform: translateX(-50%);
     width: 90%; /* 기본적으로 창 폭의 90%를 차지 */
     max-width: 1200px; /* 최대 폭 제한 */
-    height: 60px;
+    height: auto; /* 높이는 콘텐츠에 따라 조정 */
     background-color: #ffffff;
     color: #000000;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
+    align-items: center; /* 세로 중앙 정렬 */
+    justify-content: flex-start; /* 로고를 왼쪽에 정렬 */
+    flex-wrap: wrap; /* 줄바꿈 허용 */
+    padding: 10px 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     box-sizing: border-box;
 }
 
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-    .index.header {
-        width: 95%; /* 작은 화면에서는 더 좁게 설정 */
-        padding: 0 15px; /* 내부 여백 조정 */
-    }
+/* 제목 스타일 */
+.header h1 {
+    margin: 0;
+    font-size: clamp(14px, 4vw, 20px); /* 제목 글자 크기 자동 조정 */
+    text-align: center; /* 텍스트 중앙 정렬 */
+    flex: 1; /* 남은 공간을 채우도록 설정 */
+    color: #000000;
+    white-space: normal; /* 줄바꿈 허용 */
+    overflow-wrap: break-word; /* 긴 단어 줄바꿈 */
 }
 
-@media (max-width: 480px) {
-    .index.header {
-        flex-direction: column; /* 요소를 세로로 정렬 */
-        height: auto;
-        text-align: center; /* 텍스트 중앙 정렬 */
+/* 제목 링크 스타일 */
+.header h1 a {
+    text-decoration: none; /* 밑줄 제거 */
+    color: inherit; /* 부모 요소의 색상 상속 */
+}
+
+.header h1 a:visited, /* 방문한 링크 */
+.header h1 a:active { /* 클릭 중인 링크 */
+    color: inherit; /* 부모 요소의 색상 상속 */
+    text-decoration: none; /* 밑줄 제거 */
+}
+
+/* 호버 효과 (선택 사항) */
+.header h1 a:hover {
+    cursor: pointer;
+}
+
+/* 로고 스타일 */
+.index.main-button {
+    flex: 0 0 auto; /* 로고는 기본 크기를 유지 */
+    margin-right: 10px; /* 로고와 텍스트 간 여백 */
+    display: flex;
+    align-items: center; /* 로고 세로 중앙 정렬 */
+}
+
+.index.main-button img {
+    width: 120px; /* 로고 크기 */
+    height: auto;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .header {
+        width: 95%; /* 작은 화면에서는 더 좁게 설정 */
+        padding: 10px 15px; /* 내부 여백 조정 */
+        align-items: center; /* 세로 중앙 정렬 */
+    }
+
+    .header h1 {
+        font-size: clamp(12px, 4vw, 18px); /* 제목 글자 크기 자동 조정 */
     }
 
     .index.main-button img {
         width: 100px; /* 로고 크기 조정 */
     }
+}
 
-    .index.header h1 {
+@media (max-width: 480px) {
+    .header {
+        flex-direction: column; /* 요소를 세로로 정렬 */
+        align-items: center; /* 세로 및 가로 중앙 정렬 */
+        text-align: center; /* 텍스트 중앙 정렬 */
+    }
+
+    .header h1 {
+        order: 2; /* 제목이 로고 아래로 이동 */
         margin-top: 10px;
-        font-size: 18px; /* 글자 크기 줄이기 */
+        font-size: clamp(10px, 4vw, 16px); /* 제목 글자 크기 자동 조정 */
+    }
+
+    .index.main-button {
+        order: 1; /* 로고가 제목 위로 이동 */
+        margin-bottom: 10px; /* 로고와 텍스트 간 여백 추가 */
+    }
+    .back-button{
+        order: 3;
     }
 }
 
-.index.main-button img {
-    width: 120px;
-    height: auto;
-}
 
-.header h1 {
-    margin: 0;
-    left: 50%;
-    font-size: 20px;
-    text-align: center;
-    overflow: hidden;
-    left: 50%; /* 화면 가로 중앙 정렬 */
-    transform: translateX(-50%); /* 정렬 보정 */
-    position: absolute;
-    color:#000000;
-}
+
 strong {
     font-weight: 500;
     color:#133c6d;
@@ -216,6 +258,10 @@ table {
     table-layout: auto; 
     overflow-wrap: break-word; 
     margin: 0 auto; /* 위아래 여백과 좌우 중앙 정렬 */
+    overflow-x: auto;
+    max-width: 100%;
+    display: block;
+    border: none;
 }
 
 /* 컬럼명(헤더) 스타일 */
@@ -295,9 +341,10 @@ td.numeric {
 
 /* back-button 스타일 확장 */
 .back-button {
-    position: absolute;
+    /* position: absolute; */
     top: 10px; /* 상단 여백 */
     right: 10px; /* 우측 여백 */
+    align-items: center;
 }
 
 .trade-history-table {
